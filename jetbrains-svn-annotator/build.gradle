@@ -1,0 +1,89 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '2.2.0'
+    id 'org.jetbrains.intellij.platform' version '2.11.0'
+}
+
+group = 'com.svnannotator'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+    intellijPlatform { defaultRepositories() }
+}
+
+dependencies {
+    intellijPlatform { intellijIdea("2025.3") }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
+    implementation 'org.jetbrains:annotations:24.0.0'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        name = 'SVN Annotator'
+        description = '''
+            <p>SVN Annotator 是一个面向 IntelliJ IDEA / JetBrains 平台的 SVN 辅助插件，用于在编辑器中直接查看当前代码行对应的提交信息，并快速打开修订差异对比页面。</p>
+            <p><b>核心能力</b></p>
+            <ul>
+              <li>在当前光标所在行的行尾显示 SVN 标注信息</li>
+              <li>标注内容按“提交信息 | 作者 | 日期”的顺序展示</li>
+              <li>光标切换时自动刷新当前行标注</li>
+              <li>通过 IDEA 内置 Diff 页面查看当前行对应修订差异</li>
+              <li>支持 Tools 菜单与编辑器右键菜单入口</li>
+              <li>登录状态持久化，重启 IDE 后仍可继续使用</li>
+            </ul>
+            <p><b>如何使用</b></p>
+            <ol>
+              <li>打开 <b>Tools &gt; SVN Annotator &gt; SVN Annotator: Login</b>，输入 SVN 用户名和密码</li>
+              <li>将光标移动到任意一行，插件会在行尾显示该行对应的 SVN 信息</li>
+              <li>如需重新拉取数据，执行 <b>SVN Annotator: Refresh</b></li>
+              <li>如需临时关闭或恢复行尾标注，执行 <b>SVN Annotator: Toggle</b></li>
+              <li>将光标放到目标行后，执行 <b>SVN Annotator: View Changes</b>，即可打开 IDEA 内置 Diff 对比页</li>
+            </ol>
+            <p><b>快速上手</b></p>
+            <ol>
+              <li>安装插件并重启 IDEA</li>
+              <li>打开 SVN 工作副本中的任意源码文件</li>
+              <li>先执行一次 <b>SVN Annotator: Login</b></li>
+              <li>移动光标查看当前行的提交信息</li>
+              <li>执行 <b>SVN Annotator: View Changes</b> 查看修订对比</li>
+            </ol>
+            <p><b>Diff 行为说明</b></p>
+            <ul>
+              <li>数字修订会自动比较 <code>N-1 ↔ N</code></li>
+              <li>非数字修订会自动比较 <code>PREV ↔ 当前修订</code></li>
+              <li>新增文件、删除文件或某一侧修订不存在时，会自动做兼容处理</li>
+            </ul>
+            <p><b>已知限制</b></p>
+            <ul>
+              <li>当前只显示光标所在行的标注，不是整文件逐行常驻显示</li>
+              <li>目前没有独立设置页，主要通过菜单动作操作</li>
+              <li>部分特殊编码环境下仍可能出现少量乱码</li>
+            </ul>
+            <p><b>适用场景</b></p>
+            <ul>
+              <li>快速确认某一行是谁在什么时间提交的</li>
+              <li>阅读旧项目时直接从编辑器定位变更来源</li>
+              <li>在不离开 IDE 的情况下查看前后修订差异</li>
+            </ul>
+            <p><b>支持版本</b></p>
+            <p>当前构建支持 IntelliJ 平台 <code>231</code> 到 <code>254.*</code>，即 2023.1 ~ 2025.4。</p>
+        '''
+        version = '0.1.0'
+    }
+}
+
+tasks.patchPluginXml {
+    sinceBuild = '231'
+    untilBuild = '254.*'
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}

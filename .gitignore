@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+.trae/
+
+**/.gradle/
+**/.intellijPlatform/
+**/build/
+**/out/
+**/target/
+**/node_modules/
+
+**/*.iml
+**/*.log
+**/*.vsix
+**/hs_err_pid*
+**/replay_pid*
