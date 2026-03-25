@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
+        maven { url 'https://cache-redirector.jetbrains.com/intellij-dependencies' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'svn-annotator-jetbrains'

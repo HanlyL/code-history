@@ -1,0 +1,35 @@
+<idea-plugin>
+  <idea-version since-build="231" until-build="254.*" />
+  <id>com.svnannotator.svn-annotator-jetbrains</id>
+  <name>SVN Annotator</name>
+  <version>0.1.0</version>
+  <vendor email="svn-annotator@example.com">SVN Annotator</vendor>
+  <description><![CDATA[Display SVN change annotations (author, date, message) at end of each line]]></description>
+  <depends>com.intellij.modules.platform</depends>
+  <application-components>
+    <component>
+      <implementation-class>com.svnannotator.SvnService</implementation-class>
+    </component>
+    <component>
+      <implementation-class>com.svnannotator.StatusBarManager</implementation-class>
+    </component>
+    <component>
+      <implementation-class>com.svnannotator.Annotator</implementation-class>
+    </component>
+  </application-components>
+  <actions>
+    <group id="SvnAnnotator.Menu" text="SVN Annotator" popup="true">
+      <add-to-group group-id="ToolsMenu" anchor="last" />
+      <reference ref="SvnAnnotator.Login" />
+      <reference ref="SvnAnnotator.Refresh" />
+      <reference ref="SvnAnnotator.Toggle" />
+      <reference ref="SvnAnnotator.ViewChanges" />
+    </group>
+    <action id="SvnAnnotator.Login" class="com.svnannotator.LoginAction" text="SVN Annotator: Login" description="Login to SVN repository" />
+    <action id="SvnAnnotator.Refresh" class="com.svnannotator.RefreshAction" text="SVN Annotator: Refresh" description="Refresh annotations" />
+    <action id="SvnAnnotator.Toggle" class="com.svnannotator.ToggleAction" text="SVN Annotator: Toggle" description="Toggle annotations on/off" />
+    <action id="SvnAnnotator.ViewChanges" class="com.svnannotator.ViewChangesAction" text="SVN Annotator: View Changes" description="View SVN diff for current line">
+      <add-to-group group-id="EditorPopupMenu" anchor="last" />
+    </action>
+  </actions>
+</idea-plugin>

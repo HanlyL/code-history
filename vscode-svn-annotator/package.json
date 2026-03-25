@@ -1,0 +1,100 @@
+{
+  "name": "svn-annotator",
+  "displayName": "SVN Annotator",
+  "description": "Display SVN change annotations (author, date, message) at end of each line",
+  "version": "0.1.0",
+  "publisher": "svn-annotator",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:java",
+    "onLanguage:python",
+    "onLanguage:csharp",
+    "onLanguage:cpp",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "SVN Annotator",
+      "properties": {
+        "svnAnnotator.maxAnnotationLength": {
+          "type": "number",
+          "default": 80,
+          "description": "Maximum characters to display at end of line for annotation"
+        },
+        "svnAnnotator.cacheEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable caching of SVN blame results"
+        },
+        "svnAnnotator.cacheTTL": {
+          "type": "number",
+          "default": 300,
+          "description": "Cache time-to-live in seconds"
+        },
+        "svnAnnotator.svnPath": {
+          "type": "string",
+          "default": "svn",
+          "description": "Path to SVN executable"
+        },
+        "svnAnnotator.showDate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show date in line annotation"
+        },
+        "svnAnnotator.maxCacheFiles": {
+          "type": "number",
+          "default": 20,
+          "description": "Maximum number of files to cache (reduces memory usage)"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "svnAnnotator.login",
+        "title": "SVN Annotator: Login",
+        "description": "Login to SVN repository"
+      },
+      {
+        "command": "svnAnnotator.refresh",
+        "title": "SVN Annotator: Refresh",
+        "description": "Refresh annotations for current file"
+      },
+      {
+        "command": "svnAnnotator.disable",
+        "title": "SVN Annotator: Disable",
+        "description": "Disable annotations"
+      },
+      {
+        "command": "svnAnnotator.enable",
+        "title": "SVN Annotator: Enable",
+        "description": "Enable annotations"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.0",
+    "@types/vscode": "^1.75.0",
+    "@types/glob": "^8.0.0",
+    "@vscode/test-electron": "^2.2.0",
+    "glob": "^8.0.3",
+    "typescript": "^5.0.0"
+  }
+}
