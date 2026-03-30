@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.Messages
 import java.io.File
-import java.nio.charset.Charset
 
 class ViewChangesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -74,7 +73,8 @@ class ViewChangesAction : AnAction() {
                 }
             } catch (ex: Exception) {
                 ApplicationManager.getApplication().invokeLater {
-                    Messages.showErrorDialog("Failed to view changes: ${ex.message}", "SVN Annotator")
+                    val errorMessage = ex.message?.let { EncodingUtils.decodeSvnOutput(it.toByteArray()) } ?: "Unknown error"
+                    Messages.showErrorDialog("Failed to view changes: $errorMessage", "SVN Annotator")
                 }
             }
         }
@@ -131,8 +131,8 @@ class ViewChangesAction : AnAction() {
         val stdoutBytes = process.inputStream.readBytes()
         val stderrBytes = process.errorStream.readBytes()
         val exitCode = process.waitFor()
-        val stdout = decodeSvnOutput(stdoutBytes)
-        val stderr = decodeSvnOutput(stderrBytes)
+        val stdout = EncodingUtils.decodeSvnOutput(stdoutBytes)
+        val stderr = EncodingUtils.decodeSvnOutput(stderrBytes)
 
         if (exitCode == 0) {
             return SvnCommandResult(success = true, output = stdout, allowedFailure = false)
@@ -150,16 +150,6 @@ class ViewChangesAction : AnAction() {
 
     private fun isMissingAtRevisionError(errorText: String): Boolean {
         return Regex("E195012|E160013|E200009|Unable to find repository location", RegexOption.IGNORE_CASE).containsMatchIn(errorText)
-    }
-
-    private fun decodeSvnOutput(bytes: ByteArray): String {
-        val utf8 = bytes.toString(Charsets.UTF_8)
-        if (!utf8.contains('�')) return utf8
-        return try {
-            bytes.toString(Charset.forName("GBK"))
-        } catch (_: Exception) {
-            utf8
-        }
     }
 
     private fun getRevisionPair(revision: String): Pair<String, String> {

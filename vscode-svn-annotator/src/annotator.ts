@@ -172,6 +172,12 @@ export class Annotator {
     const decorations: vscode.DecorationOptions[] = [];
     this.currentDecorations.clear();
 
+    if (selectedLine < 0 || selectedLine >= editor.document.lineCount) {
+      this.selectedLineByFile.delete(filePath);
+      editor.setDecorations(this.decorationCollection, []);
+      return;
+    }
+
     const annotation = annotations[selectedLine];
     if (annotation) {
       const lineLength = editor.document.lineAt(selectedLine).text.length;
@@ -266,6 +272,32 @@ export class Annotator {
     const filePath = editor.document.uri.fsPath;
     this.selectedLineByFile.set(filePath, editor.selection.active.line);
     await this.updateAnnotations(editor);
+  }
+
+  public onDocumentChanged(editor: vscode.TextEditor, event: vscode.TextDocumentChangeEvent): void {
+    if (!editor || !editor.document) {
+      return;
+    }
+
+    const filePath = editor.document.uri.fsPath;
+    const currentSelectedLine = this.selectedLineByFile.get(filePath);
+
+    if (currentSelectedLine === undefined) {
+      return;
+    }
+
+    for (const change of event.contentChanges) {
+      const startLine = change.range.start.line;
+
+      if (currentSelectedLine >= startLine) {
+        this.selectedLineByFile.delete(filePath);
+        if (this.decorationCollection) {
+          editor.setDecorations(this.decorationCollection, []);
+        }
+        this.currentDecorations.clear();
+        return;
+      }
+    }
   }
 
   public dispose(): void {

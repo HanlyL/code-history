@@ -2,7 +2,7 @@
   "name": "svn-annotator",
   "displayName": "SVN Annotator",
   "description": "Display SVN change annotations (author, date, message) at end of each line",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "svn-annotator",
   "engines": {
     "vscode": "^1.75.0"

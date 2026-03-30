@@ -162,8 +162,9 @@ class SvnService : ApplicationComponent, PersistentStateComponent<Element> {
             }
 
             val process = Runtime.getRuntime().exec(args.toTypedArray())
-            val output = readStream(process.inputStream)
+            val bytes = process.inputStream.readBytes()
             val exitCode = process.waitFor()
+            val output = EncodingUtils.decodeSvnOutput(bytes)
 
             if (exitCode == 0) {
                 val message = parseLogMessage(output)
@@ -225,8 +226,9 @@ class SvnService : ApplicationComponent, PersistentStateComponent<Element> {
             }.toTypedArray()
 
             val process = Runtime.getRuntime().exec(args)
-            val stdout = readStream(process.inputStream)
+            val bytes = process.inputStream.readBytes()
             val exitCode = process.waitFor()
+            val stdout = EncodingUtils.decodeSvnOutput(bytes)
 
             if (exitCode != 0) return null
             parseBlameXml(stdout)

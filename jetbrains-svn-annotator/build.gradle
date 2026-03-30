@@ -19,6 +19,8 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36'
 }
 
+// 支持最新版 IDEA (2023.1 ~ 2026.*)
+
 intellijPlatform {
     pluginConfiguration {
         name = 'SVN Annotator'
@@ -68,15 +70,15 @@ intellijPlatform {
               <li>在不离开 IDE 的情况下查看前后修订差异</li>
             </ul>
             <p><b>支持版本</b></p>
-            <p>当前构建支持 IntelliJ 平台 <code>231</code> 到 <code>254.*</code>，即 2023.1 ~ 2025.4。</p>
+            <p>当前构建支持 IntelliJ 平台 <code>231</code> 到 <code>300.*</code>，即 2023.1 ~ 2026.x。</p>
         '''
-        version = '0.1.0'
+        version = '0.1.1'
     }
 }
 
 tasks.patchPluginXml {
     sinceBuild = '231'
-    untilBuild = '254.*'
+    untilBuild = '300.*'
 }
 
 kotlin {

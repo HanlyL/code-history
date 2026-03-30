@@ -9,6 +9,8 @@ import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.InlayProperties
 import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.editor.event.CaretListener
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.ProjectManager
@@ -16,12 +18,15 @@ import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.geom.Rectangle2D
 
-class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
+class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener, DocumentListener {
     private val logger = Logger.getInstance(Annotator::class.java)
     private var currentInlay: Inlay<*>? = null
     private var isEnabled: Boolean = true
     private val maxAnnotationLength: Int = 80
     private val editorCaretListeners = mutableMapOf<Editor, CaretListener>()
+    private val editorDocumentListeners = mutableMapOf<Editor, DocumentListener>()
+    private var currentEditor: Editor? = null
+    private var currentLineNumber: Int = -1
 
     companion object {
         private var instance: Annotator? = null
@@ -59,12 +64,23 @@ class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
             editorCaretListeners[editor] = this
             logger.info("CaretListener added to editor")
         }
+        if (!editorDocumentListeners.containsKey(editor)) {
+            editor.document.addDocumentListener(this)
+            editorDocumentListeners[editor] = this
+            logger.info("DocumentListener added to editor")
+        }
     }
 
     override fun editorReleased(event: com.intellij.openapi.editor.event.EditorFactoryEvent) {
         val editor = event.editor
         editor.caretModel.removeCaretListener(this)
         editorCaretListeners.remove(editor)
+        editor.document.removeDocumentListener(this)
+        editorDocumentListeners.remove(editor)
+        if (currentEditor == editor) {
+            currentEditor = null
+            currentLineNumber = -1
+        }
         logger.info("CaretListener removed from editor")
     }
 
@@ -109,6 +125,9 @@ class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
             return
         }
 
+        currentEditor = editor
+        currentLineNumber = lineNumber
+
         SvnService.getInstance().getBlame(filePath, ProjectManager.getInstance().defaultProject) { annotations ->
             if (annotations == null || annotations.isEmpty()) {
                 logger.info("No annotations returned")
@@ -118,6 +137,14 @@ class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
             ApplicationManager.getApplication().invokeLater {
                 if (!isEnabled) return@invokeLater
 
+                val document = editor.document
+                if (lineNumber < 0 || lineNumber >= document.lineCount) {
+                    logger.info("Line number $lineNumber out of range [0, ${document.lineCount})")
+                    currentInlay?.dispose()
+                    currentInlay = null
+                    return@invokeLater
+                }
+
                 val annotation = annotations.getOrNull(lineNumber) ?: run {
                     logger.info("No annotation for line $lineNumber")
                     return@invokeLater
@@ -126,9 +153,6 @@ class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
                     logger.info("Invalid annotation: author=${annotation.author}, revision=${annotation.revision}")
                     return@invokeLater
                 }
-
-                val document = editor.document
-                if (lineNumber >= document.lineCount) return@invokeLater
 
                 val lineEndOffset = document.getLineEndOffset(lineNumber)
                 val text = formatAnnotationText(annotation, filePath)
@@ -193,6 +217,25 @@ class Annotator : ApplicationComponent, EditorFactoryListener, CaretListener {
 
     override fun caretAdded(e: com.intellij.openapi.editor.event.CaretEvent) {}
     override fun caretRemoved(e: com.intellij.openapi.editor.event.CaretEvent) {}
+
+    override fun documentChanged(event: DocumentEvent) {
+        if (!isEnabled || currentEditor == null || currentLineNumber < 0) return
+
+        val editor = currentEditor ?: return
+        val document = editor.document
+
+        val changeStartLine = document.getLineNumber(event.offset)
+        val changeEndLine = document.getLineNumber(event.offset + event.newLength)
+
+        if (currentLineNumber >= changeStartLine) {
+            logger.info("Document changed at line $changeStartLine-$changeEndLine, clearing annotation at line $currentLineNumber")
+            currentInlay?.dispose()
+            currentInlay = null
+            currentLineNumber = -1
+        }
+    }
+
+    override fun beforeDocumentChange(event: DocumentEvent) {}
 
     fun refresh(editor: Editor?) {
         if (editor == null) return

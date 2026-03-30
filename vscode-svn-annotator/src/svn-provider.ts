@@ -14,6 +14,7 @@ export class SvnProvider {
   private logMessageCache: Map<string, string> = new Map();
   private pendingRequests: Map<string, boolean> = new Map();
   private config: Config;
+  private nonSvnPaths: Set<string> = new Set();
 
   private constructor() {
     this.config = Config.getInstance();
@@ -35,9 +36,10 @@ export class SvnProvider {
       const svnPath = this.config.svnPath;
       const cmd = `${svnPath} --version --quiet`;
 
-      exec(cmd, { timeout: 10000 }, (error, stdout, stderr) => {
+      exec(cmd, { timeout: 10000, encoding: 'buffer' }, (error, stdout, stderr) => {
         if (error) {
-          resolve({ success: false, error: stderr || error.message });
+          const decodedError = this.decodeSvnOutput(stderr as unknown as Buffer || Buffer.from(error.message));
+          resolve({ success: false, error: decodedError });
           return;
         }
         this.loginInfo = { username, password, isLoggedIn: true };
@@ -138,6 +140,14 @@ export class SvnProvider {
   }
 
   private async fetchBlame(filePath: string, document: vscode.TextDocument): Promise<SvnAnnotation[]> {
+    const path = require('path');
+    const dir = path.dirname(filePath);
+    
+    // 检查目录是否已在非 SVN 缓存中，避免重复尝试
+    if (this.nonSvnPaths.has(dir)) {
+      return [];
+    }
+
     return new Promise((resolve, reject) => {
       const svnPath = this.config.svnPath;
       let cmd = `${svnPath} blame "${filePath}" --xml`;
@@ -149,15 +159,23 @@ export class SvnProvider {
         }
       }
 
-      exec(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout) => {
+      exec(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024, encoding: 'buffer' }, (error, stdout) => {
         if (error) {
-          vscode.window.showWarningMessage(`SVN blame failed: ${error.message}`);
+          const decodedError = this.decodeSvnOutput(Buffer.from(error.message));
+          // 静默处理非 SVN 文件的错误，不弹出警告框
+          if (this.isNotInSvnError(decodedError)) {
+            this.nonSvnPaths.add(dir);
+            resolve([]);
+            return;
+          }
+          vscode.window.showWarningMessage(`SVN blame failed: ${decodedError}`);
           reject(error);
           return;
         }
 
         try {
-          const annotations = this.parseBlameXml(stdout, document);
+          const outputText = this.decodeSvnOutput(stdout as unknown as Buffer);
+          const annotations = this.parseBlameXml(outputText, document);
           resolve(annotations);
         } catch (parseError) {
           reject(parseError);
@@ -284,6 +302,7 @@ export class SvnProvider {
   public clearCache(): void {
     this.cache.clear();
     this.logMessageCache.clear();
+    this.nonSvnPaths.clear();
   }
 
   public clearCacheForFile(filePath: string): void {
@@ -373,5 +392,22 @@ export class SvnProvider {
       }
     }
     return false;
+  }
+
+  /**
+   * 检测是否是"非 SVN 文件"相关的错误
+   * 对于这类错误，应该静默处理，不弹出警告框
+   */
+  private isNotInSvnError(errorMessage: string): boolean {
+    const notInSvnPatterns = [
+      /is not a working copy/i,
+      /E155007/i,                    // 不是工作副本
+      /W155010/i,                    // 不是版本控制的文件
+      /not under version control/i,
+      /not a working copy/i,
+      /not mapped/i,
+      /is not under version control/i
+    ];
+    return notInSvnPatterns.some(pattern => pattern.test(errorMessage));
   }
 }

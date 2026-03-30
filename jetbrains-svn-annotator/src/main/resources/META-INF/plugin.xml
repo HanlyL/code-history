@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>com.svnannotator.svn-annotator-jetbrains</id>
     <name>SVN Annotator</name>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <vendor email="svn-annotator@example.com">SVN Annotator</vendor>
     <description><![CDATA[
         <p>SVN Annotator 是一个面向 IntelliJ IDEA / JetBrains 平台的 SVN 辅助插件，用于在编辑器中直接查看当前代码行对应的提交信息，并快速打开修订差异对比页面。</p>
@@ -45,6 +45,12 @@
         </ul>
         <p><b>支持版本</b></p>
         <p>当前构建支持 IntelliJ 平台 <code>231</code> 到 <code>254.*</code>，即 2023.1 ~ 2025.4。</p>
+        <p><b>更新日志 (v0.1.1)</b></p>
+        <ul>
+            <li>修复：删除代码行后行尾标注不消失的问题</li>
+            <li>修复：中文乱码问题（Windows 系统错误信息正确显示）</li>
+            <li>优化：文档变更时自动清除标注，避免残留</li>
+        </ul>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
